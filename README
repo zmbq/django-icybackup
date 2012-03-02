@@ -9,6 +9,7 @@ REF: http://www.lockdown.co.uk/?pg=combi
  
 Usage: 
     python manage.py backup
+    python manage.py backup -b (will backup documents directory in addition to the DB)
     python manage.py backup -m my@email.com
     python manage.py backup -m my@email.com -z   (will zip using password in backup.py)
     python manage.py backup -m my@email.com -c   (will compress using GZip -- but does not have password)
