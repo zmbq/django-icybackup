@@ -78,7 +78,7 @@ class Command(BaseCommand):
         if self.engine == 'mysql':
             print 'Doing Mysql backup to database %s into %s' % (self.db, outfile)
             self.do_mysql_backup(outfile)
-        elif self.engine in ('postgresql_psycopg2', 'postgresql'):
+        elif self.engine in ('postgresql_psycopg2', 'postgresql') or 'postgresql' in self.engine:
             print 'Doing Postgresql backup to database %s into %s' % (self.db, outfile)
             self.do_postgresql_backup(outfile)
         elif 'sqlite3' in self.engine:
