@@ -41,14 +41,7 @@ class Command(BaseCommand):
         from django.db import connection
         from django.conf import settings
         
-        try:
-            self.engine = settings.DATABASE_ENGINE
-            self.db = settings.DATABASE_NAME
-            self.user = settings.DATABASE_USER
-            self.passwd = settings.DATABASE_PASSWORD
-            self.host = settings.DATABASE_HOST
-            self.port = settings.DATABASE_PORT
-        except:
+        if hasattr(settings, 'DATABASES'):
             #Support for changed database format
             self.engine = settings.DATABASES['default']['ENGINE']
             self.db = settings.DATABASES['default']['NAME']
@@ -56,6 +49,13 @@ class Command(BaseCommand):
             self.passwd = settings.DATABASES['default']['PASSWORD']
             self.host = settings.DATABASES['default']['HOST']
             self.port = settings.DATABASES['default']['PORT']
+        else:
+            self.engine = settings.DATABASE_ENGINE
+            self.db = settings.DATABASE_NAME
+            self.user = settings.DATABASE_USER
+            self.passwd = settings.DATABASE_PASSWORD
+            self.host = settings.DATABASE_HOST
+            self.port = settings.DATABASE_PORT
             
         self.media_directory = settings.MEDIA_ROOT
             
