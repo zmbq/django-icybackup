@@ -2,7 +2,7 @@ import os, popen2, time
 from datetime import datetime
 from optparse import make_option
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.core.mail import EmailMessage
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -75,7 +75,7 @@ class Command(BaseCommand):
             self.compress_dir(self.media_directory, dir_outfile)
 
         # Doing backup
-        if self.engine == 'mysql':
+        if 'mysql' in self.engine:
             print 'Doing Mysql backup to database %s into %s' % (self.db, outfile)
             self.do_mysql_backup(outfile)
         elif self.engine in ('postgresql_psycopg2', 'postgresql') or 'postgresql' in self.engine:
