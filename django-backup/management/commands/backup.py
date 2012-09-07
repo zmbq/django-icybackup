@@ -35,12 +35,12 @@ class Command(BaseCommand):
         self.directories = options.get('directories')
         self.zipencrypt = options.get('zipencrypt')
         self.backup_docs = options.get('backup_docs')
-        self.current_site = Site.objects.get_current()
+        if 'site' in settings.INSTALLED_APPS:
+            self.current_site = Site.objects.get_current()
+        else:
+            self.current_site = ''
         self.encrypt_password = "ENTER PASSWORD HERE"
 
-        from django.db import connection
-        from django.conf import settings
-        
         if hasattr(settings, 'DATABASES'):
             #Support for changed database format
             self.engine = settings.DATABASES['default']['ENGINE']
@@ -159,16 +159,15 @@ class Command(BaseCommand):
         args = []
         if self.user:
             args += ["--username=%s" % self.user]
-        if self.passwd:
-            args += ["--password"]
         if self.host:
             args += ["--host=%s" % self.host]
         if self.port:
             args += ["--port=%s" % self.port]
         if self.db:
             args += [self.db]
-        pipe = popen2.Popen4('pg_dump %s > %s' % (' '.join(args), outfile))
         if self.passwd:
-            pipe.tochild.write('%s\n' % self.passwd)
-            pipe.tochild.close()
+            command = 'PGPASSWORD=%s pg_dump %s > %s' % (self.passwd, ' '.join(args), outfile)
+        else:
+            command = 'pg_dump %s -w > %s' % (' '.join(args), outfile)
+        os.system(command)
 
