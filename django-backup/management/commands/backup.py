@@ -35,12 +35,12 @@ class Command(BaseCommand):
         self.directories = options.get('directories')
         self.zipencrypt = options.get('zipencrypt')
         self.backup_docs = options.get('backup_docs')
-        self.current_site = Site.objects.get_current()
+        if 'site' in settings.INSTALLED_APPS:
+            self.current_site = Site.objects.get_current()
+        else:
+            self.current_site = ''
         self.encrypt_password = "ENTER PASSWORD HERE"
 
-        from django.db import connection
-        from django.conf import settings
-        
         if hasattr(settings, 'DATABASES'):
             #Support for changed database format
             self.engine = settings.DATABASES['default']['ENGINE']
