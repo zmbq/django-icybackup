@@ -74,6 +74,8 @@ class Command(BaseCommand):
         backup_root = mkdtemp()
         database_root = os.path.join(backup_root, 'databases')
         os.mkdir(database_root)
+        
+        print backup_root
 
         #Backup documents?
         if self.backup_docs:
