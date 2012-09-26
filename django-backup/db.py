@@ -40,7 +40,7 @@ def __postgresql_backup(database, outfile):
     if 'NAME' in database:
         args += [database['NAME']]
     if 'PASSWORD' in database:
-        command = 'PGPASSWORD=%s pg_dump %s > %s' % (database['PASSWORD'], ' '.join(args), outfile)
+        command = 'PGPASSWORD=%s pg_dump -Ox %s > %s' % (database['PASSWORD'], ' '.join(args), outfile)
     else:
         command = 'pg_dump %s -w > %s' % (' '.join(args), outfile)
     os.system(command)
