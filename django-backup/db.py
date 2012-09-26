@@ -1,5 +1,6 @@
 import os
 from django.core.management.base import CommandError
+from tempfile import mkstemp
 
 def backup(database, outfile):
     engine = database['ENGINE']
@@ -39,8 +40,17 @@ def __postgresql_backup(database, outfile):
         args += ["--port=%s" % database['PORT']]
     if 'NAME' in database:
         args += [database['NAME']]
+    
     if 'PASSWORD' in database:
-        command = 'PGPASSWORD=%s pg_dump -Ox %s > %s' % (database['PASSWORD'], ' '.join(args), outfile)
-    else:
-        command = 'pg_dump %s -w > %s' % (' '.join(args), outfile)
-    os.system(command)
+        # create a pgpass file that always returns the same password, as a secure temp file
+        password_fd, password_path = mkstemp()
+        password_file = os.fdopen(password_fd, 'w')
+        password_file.write('*:*:*:*:{}'.format(database['PASSWORD']))
+        password_file.close()
+        os.environ['PGPASSFILE'] = password_path
+    
+    os.system('pg_dump %s -w > %s' % (' '.join(args), outfile))
+    
+    # clean up
+    if password_path:
+        os.remove(password_path)
