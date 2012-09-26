@@ -1,6 +1,9 @@
 import os, popen2, time
 from datetime import datetime
 from optparse import make_option
+from tempfile import mkdtemp
+
+from ... import db
 
 from django.core.management.base import BaseCommand, CommandError
 from django.core.mail import EmailMessage
@@ -40,22 +43,21 @@ class Command(BaseCommand):
         else:
             self.current_site = ''
         self.encrypt_password = "ENTER PASSWORD HERE"
-
+        
         if hasattr(settings, 'DATABASES'):
-            #Support for changed database format
-            self.engine = settings.DATABASES['default']['ENGINE']
-            self.db = settings.DATABASES['default']['NAME']
-            self.user = settings.DATABASES['default']['USER']
-            self.passwd = settings.DATABASES['default']['PASSWORD']
-            self.host = settings.DATABASES['default']['HOST']
-            self.port = settings.DATABASES['default']['PORT']
+            database_list = settings.DATABASES
         else:
-            self.engine = settings.DATABASE_ENGINE
-            self.db = settings.DATABASE_NAME
-            self.user = settings.DATABASE_USER
-            self.passwd = settings.DATABASE_PASSWORD
-            self.host = settings.DATABASE_HOST
-            self.port = settings.DATABASE_PORT
+            # database details are in the old format, so convert to the new one
+            database_list = {
+                'default': {
+                    'ENGINE': settings.DATABASE_ENGINE,
+                    'NAME': settings.DATABASE_NAME,
+                    'USER': settings.DATABASE_USER,
+                    'PASSWORD': settings.DATABASE_PASSWORD,
+                    'HOST': settings.DATABASE_HOST,
+                    'PORT': settings.DATABASE_PORT,
+                }
+            }
             
         self.media_directory = settings.MEDIA_ROOT
             
@@ -67,6 +69,11 @@ class Command(BaseCommand):
             os.makedirs(backup_dir)
 
         outfile = os.path.join(backup_dir, 'backup_%s.sql' % self._time_suffix())
+        
+        # Create a temporary directory to perform our backup in
+        backup_root = mkdtemp()
+        database_root = os.path.join(backup_root, 'databases')
+        os.mkdir(database_root)
 
         #Backup documents?
         if self.backup_docs:
@@ -74,18 +81,9 @@ class Command(BaseCommand):
             dir_outfile = os.path.join(backup_dir, 'media_backup.tar.gz')
             self.compress_dir(self.media_directory, dir_outfile)
 
-        # Doing backup
-        if 'mysql' in self.engine:
-            print 'Doing Mysql backup to database %s into %s' % (self.db, outfile)
-            self.do_mysql_backup(outfile)
-        elif self.engine in ('postgresql_psycopg2', 'postgresql') or 'postgresql' in self.engine:
-            print 'Doing Postgresql backup to database %s into %s' % (self.db, outfile)
-            self.do_postgresql_backup(outfile)
-        elif 'sqlite3' in self.engine:
-            print 'Doing sqlite backup to database %s into %s' % (self.db, outfile)
-            self.do_sqlite_backup(outfile)
-        else:
-            raise CommandError('Backup in %s engine not implemented' % self.engine)
+        # Back up databases
+        for name, database in database_list.iteritems():
+            db.backup(database, os.path.join(database_root, name))
 
         # Compressing backup
         if self.compress:
@@ -137,37 +135,4 @@ class Command(BaseCommand):
         
         #os.system('gpg --yes --passphrase %s -c %s' % (self.encrypt_password, infile))        
         #os.system('rm %s' % infile)
-
-    def do_sqlite_backup(self, outfile):
-        os.system('cp %s %s' % (self.db,outfile))
-
-    def do_mysql_backup(self, outfile):
-        args = []
-        if self.user:
-            args += ["--user=%s" % self.user]
-        if self.passwd:
-            args += ["--password=%s" % self.passwd]
-        if self.host:
-            args += ["--host=%s" % self.host]
-        if self.port:
-            args += ["--port=%s" % self.port]
-        args += [self.db]
-
-        os.system('mysqldump %s > %s' % (' '.join(args), outfile))
-
-    def do_postgresql_backup(self, outfile):
-        args = []
-        if self.user:
-            args += ["--username=%s" % self.user]
-        if self.host:
-            args += ["--host=%s" % self.host]
-        if self.port:
-            args += ["--port=%s" % self.port]
-        if self.db:
-            args += [self.db]
-        if self.passwd:
-            command = 'PGPASSWORD=%s pg_dump %s > %s' % (self.passwd, ' '.join(args), outfile)
-        else:
-            command = 'pg_dump %s -w > %s' % (' '.join(args), outfile)
-        os.system(command)
 
