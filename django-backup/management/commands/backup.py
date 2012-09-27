@@ -17,27 +17,30 @@ from django.contrib.sites.models import Site
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('-o', '--output', default=None, dest='output',
-            help='File to write backup to'),
+            help='Write backup to file'),
+        make_option('-d', '--outdir', default=None, dest='outdir',
+        help='Write backup to timestamped file in a directory'),
         make_option('--email', '-m', default=None, dest='email',
             help='Sends email with attached dump file'),
-        make_option('--directory', '-d', action='append', default=[], dest='directories',
-            help='Include Directories'),
+        make_option('--directory', '-D', action='append', default=[], dest='directories',
+            help='Include extra directories in the backup tarball'),
         make_option('--backup_docs', '-b', action='store_true', default=False,
             dest='backup_docs', help='Backup your docs directory alongside the DB dump.'),
 
     )
-    help = "Backup database. Only Mysql, Postgresql and Sqlite engines are implemented"
-
-    def _time_suffix(self):
-        return time.strftime('%Y%m%d-%H%M%S')
+    help = "Back up a Django installation (database and media directory)."
 
     def handle(self, *args, **options):
         self.email = options.get('email')
-        self.directories = options.get('directories')
+        extra_dirs = options.get('directories')
         
         output_file = options.get('output')
+        output_dir = options.get('outdir')
         if output_file is None:
-            raise CommandError('You must specify an output file')
+            if output_dir is None:
+                raise CommandError('You must specify an output file')
+            else:
+                output_file = os.path.join(output_dir, '{}.tgz'.format(_time()))
         
         if hasattr(settings, 'DATABASES'):
             database_list = settings.DATABASES
@@ -64,19 +67,13 @@ class Command(BaseCommand):
         # Back up databases
         for name, database in database_list.iteritems():
             db.backup(database, os.path.join(database_root, name))
-
-        # Backuping directoris
-        dir_outfiles = []
-        for directory in self.directories:
-            dir_outfile = os.path.join(backup_dir, '%s_%s.tar.gz' % (os.path.basename(directory), self._time_suffix()))
-            dir_outfiles.append(dir_outfile)
-            print("Compressing '%s' to '%s'" % (directory, dir_outfile))
-            self.compress_dir(directory, dir_outfile)
         
         # create backup gzipped tarball
         with tarfile.open(output_file, 'w:gz') as tf:
             tf.add(database_root, arcname='backup/databases')
             tf.add(media_root, arcname='backup/media')
+            for dir in extra_dirs:
+                tf.add(dir, arcname='backup/dirs/{}'.format(os.path.split(dir)[1]))
 
         # Sending mail with backups
         if self.email:
@@ -103,3 +100,5 @@ def rm_rf(d):
             os.unlink(path)
     os.rmdir(d)
 
+def _time():
+    return time.strftime('%Y%m%d-%H%M%S')
