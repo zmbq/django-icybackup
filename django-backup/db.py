@@ -2,6 +2,7 @@ import os
 from django.core.management.base import CommandError
 from tempfile import mkstemp
 from subprocess import check_call
+from shutil import copy
 
 def backup(database, outfile):
     engine = database['ENGINE']
@@ -15,7 +16,7 @@ def backup(database, outfile):
         raise CommandError('Backup in %s engine not implemented' % engine)
 
 def __sqlite_backup(database, outfile):
-    os.system('cp %s %s' % (database['NAME'], outfile))
+    copy(database['NAME'], outfile)
 
 def __mysql_backup(database, outfile):
     command = ['mysqldump']
