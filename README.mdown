@@ -1,0 +1,53 @@
+# django-backup (fork)
+
+Back up your databases and media directory.
+
+A fork of (a fork of) django-backup which adds:
+
+- Multiple database support
+- Less assumptions about presence of a Bourne-like shell and GNU tools
+- Less tarballception (tarballs inside tarballs)
+- Uses more secure method for giving Postgres the database password
+- Timestamped-backup mode
+
+## Installation
+
+Run `pip install https://github.com/stbarnabas/django-backup/tarball/master`, then add `django-backup` to your `INSTALLED_APPS`
+
+## Usage
+
+- `manage.py backup -o backup.tgz` - back up to `backup.tgz`
+- `manage.py backup -d backups` - back up to `backups/[CURRENT_DATETIME].tgz`
+
+Supports the following optional flags:
+
+- `-e extra_file` - Add an extra file or directory to the backup (can be specified multiple times)
+
+## To do
+
+- S3 backup support
+- Backup directory cleanup command
+- Tests
+- remove password from `mysqldump` process name
+- Restore command
+- Either make email command work or remove it
+
+## Original readme
+
+```
+This is a fork of http://code.google.com/p/django-backup/
+
+The original description:
+    This application contributes 'backup' subcommand to django-admin.py and manage.py. 
+ 
+The reason for the fork is to add a password protected zipfile feature.  This makes emailing the file more secure, but does not necessarily make it "secure".  Of particular note, the password you use may be visible to other users on system while the zip is running.  Again, more secure but not necessarily "secure"
+
+REF: http://www.lockdown.co.uk/?pg=combi  
+ 
+Usage: 
+    python manage.py backup
+    python manage.py backup -b (will backup documents directory in addition to the DB)
+    python manage.py backup -m my@email.com
+    python manage.py backup -m my@email.com -z   (will zip using password in backup.py)
+    python manage.py backup -m my@email.com -c   (will compress using GZip -- but does not have password)
+```
