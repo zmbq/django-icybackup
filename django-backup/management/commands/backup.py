@@ -2,6 +2,7 @@ import os, popen2, time
 from datetime import datetime
 from optparse import make_option
 from tempfile import mkdtemp
+import tarfile
 
 from ... import db
 
@@ -15,14 +16,12 @@ from django.contrib.sites.models import Site
 # Based on: http://www.yashh.com/blog/2008/sep/05/django-database-backup-view/
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
+        make_option('-o', '--output', default=None, dest='output',
+            help='File to write backup to'),
         make_option('--email', '-m', default=None, dest='email',
             help='Sends email with attached dump file'),
-        make_option('--compress', '-c', action='store_true', default=False, dest='compress',
-            help='Compress SQL dump file using GZ'),
         make_option('--directory', '-d', action='append', default=[], dest='directories',
             help='Include Directories'),
-        make_option('--zipencrypt', '-z', action='store_true', default=False,
-            dest='zipencrypt', help='Compress and encrypt SQL dump file using zip'),
         make_option('--backup_docs', '-b', action='store_true', default=False,
             dest='backup_docs', help='Backup your docs directory alongside the DB dump.'),
 
@@ -43,6 +42,10 @@ class Command(BaseCommand):
         else:
             self.current_site = ''
         self.encrypt_password = "ENTER PASSWORD HERE"
+        
+        output_file = options.get('output')
+        if output_file is None:
+            raise CommandError('You must specify an output file')
         
         if hasattr(settings, 'DATABASES'):
             database_list = settings.DATABASES
@@ -74,8 +77,6 @@ class Command(BaseCommand):
         backup_root = mkdtemp()
         database_root = os.path.join(backup_root, 'databases')
         os.mkdir(database_root)
-        
-        print backup_root
 
         #Backup documents?
         if self.backup_docs:
@@ -87,20 +88,6 @@ class Command(BaseCommand):
         for name, database in database_list.iteritems():
             db.backup(database, os.path.join(database_root, name))
 
-        # Compressing backup
-        if self.compress:
-            compressed_outfile = outfile + '.gz'
-            print 'Compressing backup file %s to %s' % (outfile, compressed_outfile)
-            self.do_compress(outfile, compressed_outfile)
-            outfile = compressed_outfile
-            
-        #Zip & Encrypting backup
-        if self.zipencrypt:
-            zip_encrypted_outfile = outfile + ".zip"
-            print 'Ziping and Encrypting backup file %s to %s' % (outfile, zip_encrypted_outfile)
-            self.do_encrypt(outfile, zip_encrypted_outfile)
-            outfile = zip_encrypted_outfile
-
         # Backuping directoris
         dir_outfiles = []
         for directory in self.directories:
@@ -108,14 +95,17 @@ class Command(BaseCommand):
             dir_outfiles.append(dir_outfile)
             print("Compressing '%s' to '%s'" % (directory, dir_outfile))
             self.compress_dir(directory, dir_outfile)
+        
+        # create gzipped tarball of the backup directory
+        with tarfile.open(output_file, 'w:gz') as tf:
+            tf.add(database_root, arcname='backup/databases')
 
         # Sending mail with backups
         if self.email:
             print "Sending e-mail with backups to '%s'" % self.email
             self.sendmail(settings.SERVER_EMAIL, [self.email], dir_outfiles + [outfile])
-
-    def compress_dir(self, directory, outfile):
-        os.system('tar -czf %s %s' % (outfile, directory))
+        
+        rm_rf(backup_root)
 
     def sendmail(self, address_from, addresses_to, attachements):
         subject = "Your DB-backup for %s %s" % (datetime.now().strftime("%d %b %Y"), self.current_site)
@@ -126,15 +116,12 @@ class Command(BaseCommand):
         for attachement in attachements:
             email.attach_file(attachement)
         email.send()
-
-    def do_compress(self, infile, outfile):
-        os.system('gzip --stdout %s > %s' % (infile, outfile))
-        os.system('rm %s' % infile)
-
-    def do_encrypt(self, infile, outfile):
-        os.system('zip -P %s %s %s' % (self.encrypt_password, outfile, infile))
-        os.system('rm %s' % infile)        
         
-        #os.system('gpg --yes --passphrase %s -c %s' % (self.encrypt_password, infile))        
-        #os.system('rm %s' % infile)
+def rm_rf(d):
+    for path in (os.path.join(d,f) for f in os.listdir(d)):
+        if os.path.isdir(path):
+            rm_rf(path)
+        else:
+            os.unlink(path)
+    os.rmdir(d)
 
