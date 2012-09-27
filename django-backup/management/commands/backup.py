@@ -33,15 +33,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.email = options.get('email')
-        self.compress = options.get('compress')
         self.directories = options.get('directories')
-        self.zipencrypt = options.get('zipencrypt')
-        self.backup_docs = options.get('backup_docs')
-        if 'site' in settings.INSTALLED_APPS:
-            self.current_site = Site.objects.get_current()
-        else:
-            self.current_site = ''
-        self.encrypt_password = "ENTER PASSWORD HERE"
         
         output_file = options.get('output')
         if output_file is None:
@@ -62,27 +54,12 @@ class Command(BaseCommand):
                 }
             }
             
-        self.media_directory = settings.MEDIA_ROOT
-            
-        backup_dir = 'backups'
-        if self.backup_docs:
-            backup_dir = "backups/%s" % self._time_suffix()
-            
-        if not os.path.exists(backup_dir):
-            os.makedirs(backup_dir)
-
-        outfile = os.path.join(backup_dir, 'backup_%s.sql' % self._time_suffix())
+        media_root = settings.MEDIA_ROOT
         
         # Create a temporary directory to perform our backup in
         backup_root = mkdtemp()
         database_root = os.path.join(backup_root, 'databases')
         os.mkdir(database_root)
-
-        #Backup documents?
-        if self.backup_docs:
-            print "Backing up documents directory to %s from %s" % (backup_dir,self.media_directory)
-            dir_outfile = os.path.join(backup_dir, 'media_backup.tar.gz')
-            self.compress_dir(self.media_directory, dir_outfile)
 
         # Back up databases
         for name, database in database_list.iteritems():
@@ -96,9 +73,10 @@ class Command(BaseCommand):
             print("Compressing '%s' to '%s'" % (directory, dir_outfile))
             self.compress_dir(directory, dir_outfile)
         
-        # create gzipped tarball of the backup directory
+        # create backup gzipped tarball
         with tarfile.open(output_file, 'w:gz') as tf:
             tf.add(database_root, arcname='backup/databases')
+            tf.add(media_root, arcname='backup/media')
 
         # Sending mail with backups
         if self.email:
