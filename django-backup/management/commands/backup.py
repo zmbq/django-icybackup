@@ -22,17 +22,14 @@ class Command(BaseCommand):
         help='Write backup to timestamped file in a directory'),
         make_option('--email', '-m', default=None, dest='email',
             help='Sends email with attached dump file'),
-        make_option('--directory', '-D', action='append', default=[], dest='directories',
-            help='Include extra directories in the backup tarball'),
-        make_option('--backup_docs', '-b', action='store_true', default=False,
-            dest='backup_docs', help='Backup your docs directory alongside the DB dump.'),
-
+        make_option('--extra', '-e', action='append', default=[], dest='extras',
+            help='Include extra directories or files in the backup tarball'),
     )
     help = "Back up a Django installation (database and media directory)."
 
     def handle(self, *args, **options):
         self.email = options.get('email')
-        extra_dirs = options.get('directories')
+        extras = options.get('extras')
         
         output_file = options.get('output')
         output_dir = options.get('outdir')
@@ -72,8 +69,8 @@ class Command(BaseCommand):
         with tarfile.open(output_file, 'w:gz') as tf:
             tf.add(database_root, arcname='backup/databases')
             tf.add(media_root, arcname='backup/media')
-            for dir in extra_dirs:
-                tf.add(dir, arcname='backup/dirs/{}'.format(os.path.split(dir)[1]))
+            for extra in extras:
+                tf.add(extra, arcname='backup/extras/{}'.format(os.path.split(extra)[1]))
 
         # Sending mail with backups
         if self.email:
