@@ -1,6 +1,7 @@
 import os
 from django.core.management.base import CommandError
 from tempfile import mkstemp
+from subprocess import check_call
 
 def backup(database, outfile):
     engine = database['ENGINE']
@@ -17,29 +18,30 @@ def __sqlite_backup(database, outfile):
     os.system('cp %s %s' % (database['NAME'], outfile))
 
 def __mysql_backup(database, outfile):
-    args = []
+    command = ['mysqldump']
     if 'USER' in database:
-        args += ["--user=%s" % database['USER']]
+        command += ["--user=%s" % database['USER']]
     if 'PASSWORD' in database:
-        args += ["--password=%s" % database['PASSWORD']]
+        command += ["--password=%s" % database['PASSWORD']]
     if 'HOST' in database:
-        args += ["--host=%s" % database['HOST']]
+        command += ["--host=%s" % database['HOST']]
     if 'PORT' in database:
-        args += ["--port=%s" % database['PORT']]
-    args += [database['NAME']]
-
-    os.system('mysqldump %s > %s' % (' '.join(args), outfile))
+        command += ["--port=%s" % database['PORT']]
+    command += [database['NAME']]
+    
+    with open(outfile, 'w') as f:
+        check_call(command, stdout=f)
 
 def __postgresql_backup(database, outfile):
-    args = []
+    command = ['pg_dump', '-Ox']
     if 'USER' in database:
-        args += ["--username=%s" % database['USER']]
+        command += ["--username=%s" % database['USER']]
     if 'HOST' in database:
-        args += ["--host=%s" % database['HOST']]
+        command += ["--host=%s" % database['HOST']]
     if 'PORT' in database:
-        args += ["--port=%s" % database['PORT']]
+        command += ["--port=%s" % database['PORT']]
     if 'NAME' in database:
-        args += [database['NAME']]
+        command += [database['NAME']]
     
     if 'PASSWORD' in database:
         # create a pgpass file that always returns the same password, as a secure temp file
@@ -48,9 +50,12 @@ def __postgresql_backup(database, outfile):
         password_file.write('*:*:*:*:{}'.format(database['PASSWORD']))
         password_file.close()
         os.environ['PGPASSFILE'] = password_path
+    else:
+        command.append('-w')
     
-    os.system('pg_dump %s -w > %s' % (' '.join(args), outfile))
-    
+    with open(outfile, 'w') as f:
+        check_call(command, stdout=f)
+        
     # clean up
     if password_path:
         os.remove(password_path)
