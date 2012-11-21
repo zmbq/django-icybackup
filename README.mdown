@@ -12,7 +12,7 @@ A fork of (a fork of) django-backup which adds:
 
 ## Installation
 
-Run `pip install https://github.com/stbarnabas/django-backup/tarball/master`, then add `django-backup` to your `INSTALLED_APPS`
+Run `pip install https://github.com/stbarnabas/django-backup/tarball/master`, then add `django-backup` to your `INSTALLED_APPS`.
 
 ## Usage
 

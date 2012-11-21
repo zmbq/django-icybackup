@@ -58,5 +58,5 @@ def __postgresql_backup(database, outfile):
         check_call(command, stdout=f)
         
     # clean up
-    if password_path:
+    if 'PASSWORD' in database:
         os.remove(password_path)
