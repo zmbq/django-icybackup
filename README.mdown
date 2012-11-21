@@ -30,7 +30,6 @@ Supports the following optional flags:
 - Tests
 - remove password from `mysqldump` process name
 - Restore command
-- Either make email command work or remove it
 
 ## Original readme
 
