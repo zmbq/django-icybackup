@@ -1,4 +1,4 @@
-import os, time
+import os, sys, time
 from optparse import make_option
 from tempfile import mkdtemp, NamedTemporaryFile
 import tarfile
@@ -21,6 +21,8 @@ class Command(BaseCommand):
             help='Write backup to timestamped file in a directory'),
         make_option('-g', '--glacier', default=None, dest='glacier',
             help='Upload backup to the Amazon Glacier vault with the given ARN'),
+        make_option('-O', '--stdout', action='store_true', dest='stdout',
+            help='Output backup tarball to standard output'),
         make_option('--extra', '-e', action='append', default=[], dest='extras',
             help='Include extra directories or files in the backup tarball'),
     )
@@ -32,10 +34,11 @@ class Command(BaseCommand):
         output_file = options.get('output')
         output_dir = options.get('outdir')
         glacier_vault = options.get('glacier')
+        output_to_stdout = options.get('stdout')
         output_file_temporary = False
         
         # glacier backups go to a temporary file
-        if glacier_vault is not None:
+        if glacier_vault is not None or output_to_stdout:
             output_file_temporary = True
             output_file_obj = NamedTemporaryFile(delete=False)
             output_file_obj.close() # we'll open it later
@@ -90,7 +93,6 @@ class Command(BaseCommand):
             else:
                 raise CommandError('The specified vault could not be accessed.')
             id = vault.upload_archive(output_file)
-            os.unlink(output_file)
             
             # record backup internally
             # we don't need this record in order to restore from backup (obviously!)
@@ -98,8 +100,15 @@ class Command(BaseCommand):
             record = models.GlacierBackup.objects.create(glacier_id=id)
             record.save()
         
+        # output to stdout
+        if output_to_stdout:
+            with open(output_file, 'r') as f:
+                sys.stdout.write(f.read())
+        
         # clean up
         rm_rf(backup_root)
+        if output_file_temporary:
+            os.unlink(output_file)
         
 def rm_rf(d):
     for path in (os.path.join(d,f) for f in os.listdir(d)):
