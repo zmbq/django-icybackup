@@ -9,7 +9,7 @@ def get_long_desc():
         print "WARNING: The long readme wasn't converted properly"
 
 setup(name='django-icybackup',
-    version='0.1pre',
+    version='0.1pre1',
     description='A Django database/media backup tool with Amazon Glacier and local folder support',
     long_description=get_long_desc(),
     author='Adam Brenecki, St Barnabas\' Theological College',
