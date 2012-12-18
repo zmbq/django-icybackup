@@ -80,8 +80,14 @@ class Command(BaseCommand):
         with tarfile.open(output_file, 'w:gz') as tf:
             tf.add(database_root, arcname='backup/databases')
             tf.add(media_root, arcname='backup/media')
-            for extra in extras:
-                tf.add(extra, arcname='backup/extras/{}'.format(os.path.split(extra)[1]))
+            if len(extras) > 0:
+                extras_mf = NamedTemporaryFile(delete=False)
+                for count, extra in enumerate(extras):
+                    tf.add(extra, arcname='backup/extras/{}'.format(count))
+                    extras_mf.write('{},{}\n'.format(count, extra.replace(',','\\,')))
+                extras_mf.close()
+                tf.add(extras_mf.name, arcname='backup/extras/manifest')
+                os.unlink(extras_mf.name)
         
         # upload to amazon glacier
         if glacier_vault is not None:
