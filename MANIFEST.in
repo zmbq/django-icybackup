@@ -1,3 +1,0 @@
-include AUTHORS CHANGES README INSTALL LICENSE
-recursive-include django-backup *.py
-include docs/Makefile

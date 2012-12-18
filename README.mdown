@@ -1,31 +1,36 @@
-# django-backup (fork)
+# django-icybackup
 
-Back up your databases and media directory. Works with PostgreSQL, MySQL and sqlite.
+Back up your databases and media directory to a local file/directory or Amazon Glacier. Works with PostgreSQL, MySQL and sqlite.
 
 A fork of (a fork of) django-backup which adds:
 
+- More places to save your backups
+	- Amazon Glacier
+	- Timestamped tarballs inside a directory
 - Multiple database support
 - Less assumptions about presence of a Bourne-like shell and GNU tools
 - Less tarballception (no more redundant tarballs inside tarballs)
 - Doesn't pass PostgreSQL database password via command line argument (doing so can reveal your password to other users on the same machine)
-- Timestamped-backup mode
-- Amazon Glacier support
 
-**Warning to MySQL Users:** This script may expose your MySQL database password to other users on the same machine, as it is passed in via a command line argument. This problem previously existed but has been fixed for PostgreSQL, and pull requests to fix this for MySQL are welcome.
+**Warning to MySQL Users:** This script may expose your MySQL database password to other users on the same machine, as it is passed in via a command line argument. Pull requests to fix this problem are welcome.
 
 ## Installation
 
-Run `pip install https://github.com/stbarnabas/django-backup/tarball/master`, then add `django-backup` to your `INSTALLED_APPS`.
+Run `pip install django-icybackup`, then add `icybackup` to your `INSTALLED_APPS`.
 
 ## Usage
 
 - `manage.py backup -o backup.tgz` - back up to `backup.tgz`
 - `manage.py backup -d backups` - back up to `backups/[CURRENT_DATETIME].tgz`
-- `mapython manage.py backup -g "arn:was:glacier:us-east-1:2584098540980:vaults/my-website-backups"` - backup to the `my-website-backups` Amazon Glacier vault
+- `manage.py backup -g arn:was:glacier:us-east-1:2584098540980:vaults/my-website-backups` - backup to the `my-website-backups` Amazon Glacier vault, given by it's ARN
 
 Supports the following optional flags:
 
 - `-e extra_file` - Add an extra file or directory to the backup (can be specified multiple times)
+
+Supports the following `settings.py` settings:
+
+- `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` - required for Amazon Glacier upload to work.
 
 ## To do
 
@@ -36,7 +41,7 @@ Supports the following optional flags:
 
 ## Contributors
 
-The following people contributed code to this project or its ancestors, in chronological order:
+The following people contributed code to this project or its ancestors, in chronological order by first commit:
 
 - Dmitriy Kovalev
 - Ted Tieken
