@@ -35,16 +35,16 @@ def __mysql_backup(database, outfile):
 
 def __postgresql_backup(database, outfile):
     command = ['pg_dump', '-Ox']
-    if 'USER' in database:
+    if 'USER' in database and database['USER']:
         command += ["--username=%s" % database['USER']]
-    if 'HOST' in database:
+    if 'HOST' in database and database['HOST']:
         command += ["--host=%s" % database['HOST']]
-    if 'PORT' in database:
+    if 'PORT' in database and database['PORT']:
         command += ["--port=%s" % database['PORT']]
-    if 'NAME' in database:
+    if 'NAME' in database and database['NAME']:
         command += [database['NAME']]
     
-    if 'PASSWORD' in database:
+    if 'PASSWORD' in database and database['PASSWORD']:
         # create a pgpass file that always returns the same password, as a secure temp file
         password_fd, password_path = mkstemp()
         password_file = os.fdopen(password_fd, 'w')
@@ -58,5 +58,5 @@ def __postgresql_backup(database, outfile):
         check_call(command, stdout=f)
         
     # clean up
-    if 'PASSWORD' in database:
+    if 'PASSWORD' in database and database['PASSWORD']:
         os.remove(password_path)
