@@ -5,7 +5,7 @@ import tarfile
 from boto.glacier.layer2 import Layer2 as Glacier
 from django.conf import settings
 
-from ... import db
+from ... import db, models
 
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
@@ -89,8 +89,14 @@ class Command(BaseCommand):
                     break
             else:
                 raise CommandError('The specified vault could not be accessed.')
-            vault.upload_archive(output_file)
+            id = vault.upload_archive(output_file)
             os.unlink(output_file)
+            
+            # record backup internally
+            # we don't need this record in order to restore from backup (obviously!)
+            # but it makes pruning the backup set easier, and amazon reccomends it
+            record = models.GlacierBackup.objects.create(glacier_id=id)
+            record.save()
         
         # clean up
         rm_rf(backup_root)
