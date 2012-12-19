@@ -4,13 +4,13 @@ Back up your databases and media directory to a local file/directory or Amazon G
 
 A fork of (a fork of) django-backup which adds:
 
-- More places to save your backups
-	- Amazon Glacier
-	- Timestamped tarballs inside a directory
 - Multiple database support
+- Optionally save your backups to Amazon Glacier
 - Less assumptions about presence of a Bourne-like shell and GNU tools
 - Less tarballception (no more redundant tarballs inside tarballs)
-- Doesn't pass PostgreSQL database password via command line argument (doing so can reveal your password to other users on the same machine)
+- Postgres-specific improvements:
+	- Uses the custom archive type for `pg_dump`, for maximum flexibility at restore time, so there's no need to worry about having to hand-edit or craft cryptic regexes for a many-thousand-line SQL file when restoring just because the wrong command line flags were used when making the backup.
+	- Doesn't pass PostgreSQL database password via command line argument, as doing so can reveal your database password to other users on the same machine.
 
 **Warning to MySQL Users:** This script may expose your MySQL database password to other users on the same machine, as it is passed in via a command line argument. Pull requests to fix this problem are welcome.
 

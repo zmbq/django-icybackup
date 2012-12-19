@@ -1,0 +1,62 @@
+import os, sys, time, shutil
+from optparse import make_option
+from tempfile import mkdtemp, NamedTemporaryFile
+import tarfile
+from boto.glacier.layer2 import Layer2 as Glacier
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
+from distutils.dir_util import copy_tree
+
+from ...components import db, lib
+
+# Based on: http://code.google.com/p/django-backup/
+# Based on: http://www.djangosnippets.org/snippets/823/
+# Based on: http://www.yashh.com/blog/2008/sep/05/django-database-backup-view/
+class Command(BaseCommand):
+	option_list = BaseCommand.option_list + (
+		make_option('-i', '--file', default=None, dest='infile',
+			help='Read backup from file'),
+		make_option('-I', '--stdin', action='store_true', dest='stdin',
+			help='Read backup from standard input'),
+		)
+	help = "Restore a Django installation (database and media directory)."
+
+	def handle(self, *args, **options):
+		extras = options.get('extras')
+
+		input_file = options.get('infile')
+		input_from_stdin = options.get('stdin')
+		input_file_temporary = False
+		
+		if input_file is None and input_from_stdin is None:
+			raise CommandError('You must specify an input file')
+
+		media_root = settings.MEDIA_ROOT
+		
+		# read from stdin
+		if input_from_stdin:
+			input_file_temporary = True
+			input_file_obj = NamedTemporaryFile(delete=False)
+			input_file_obj.write(sys.stdin.read())
+			input_file_obj.close()
+			input_file = input_file_obj.name
+
+		# Create a temporary directory to extract our backup to
+		extract_root = mkdtemp()
+		backup_root = os.path.join(extract_root, 'backup')	
+		database_root = os.path.join(backup_root, 'databases')
+		
+		# extract the gzipped tarball
+		with tarfile.open(input_file, 'r') as tf:
+			tf.extractall(extract_root)
+
+		# Restore databases
+		db.restore_from(settings, database_root)
+		
+		# Restore media directory
+		copy_tree(os.path.join(backup_root, 'media'), media_root)
+		
+		# clean up
+		lib.rm_rf(extract_root)
+		if input_file_temporary:
+			os.unlink(input_file)
