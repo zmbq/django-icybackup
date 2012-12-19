@@ -20,17 +20,27 @@ Run `pip install django-icybackup`, then add `icybackup` to your `INSTALLED_APPS
 
 ## Usage
 
+### Backing up
+
 - `manage.py backup -o backup.tgz` - back up to `backup.tgz`
 - `manage.py backup -d backups` - back up to `backups/[CURRENT_DATETIME].tgz`
 - `manage.py backup -g arn:was:glacier:us-east-1:2584098540980:vaults/my-website-backups` - backup to the `my-website-backups` Amazon Glacier vault, given by it's ARN
 - `manage.py backup --stdout` - back up to stdout
-	- This is a bit useless right now, but the plan is to eventually have a `restore` management command with a `--stdin` option, which should make swapping over servers easy using pipes and SSH.
 
 Supports the following optional flags:
 
 - `-e extra_file` - Add an extra file or directory to the backup (can be specified multiple times)
 
-Supports the following `settings.py` settings:
+### Restoring
+
+- `manage.py restore -i backup.tgz` - restore from `backup.tgz`
+- `manage.py restore --stdin` - restore from stdin
+
+Tip: If you want to move servers, or copy your production database/media exactly to development or staging, it is possible to do something like this:
+
+    ssh other-server 'cd path/to/app && manage.py backup --stdout' | manage.py restore --stdin
+
+### `settings.py` settings
 
 - `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` - required for Amazon Glacier upload to work.
 
