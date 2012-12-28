@@ -14,7 +14,7 @@ from ...components import db, lib
 # Based on: http://www.yashh.com/blog/2008/sep/05/django-database-backup-view/
 class Command(BaseCommand):
 	option_list = BaseCommand.option_list + (
-		make_option('-i', '--file', default=None, dest='infile',
+		make_option('-i', '--file', default=None, dest='input',
 			help='Read backup from file'),
 		make_option('-I', '--stdin', action='store_true', dest='stdin',
 			help='Read backup from standard input'),
@@ -24,7 +24,7 @@ class Command(BaseCommand):
 	def handle(self, *args, **options):
 		extras = options.get('extras')
 
-		input_file = options.get('infile')
+		input_file = options.get('input')
 		input_from_stdin = options.get('stdin')
 		input_file_temporary = False
 		
