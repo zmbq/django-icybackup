@@ -5,10 +5,9 @@ We're not using Django's unit test framework because this is really only one big
 and Django likes to use an in-memory sqlite database, which can't be backed up.
 """
 import hashlib
+from optparse import make_option
 from django.conf import settings
 import os
-
-from django.test import TestCase
 from ...models import Blah
 from django.core.management import call_command, BaseCommand
 
@@ -19,22 +18,41 @@ TEST_MYSQL = "This is the test content for the MySQL database"
 TEST_SQLITE = "This is the test content for the SQLite database"
 
 class Command(BaseCommand):
+	option_list = BaseCommand.option_list + (
+	        make_option('--without-mysql', action='store_false', dest='mysql'),
+	        make_option('--without-postgres', action='store_false', dest='postgres'),
+	        make_option('--without-sqlite', action='store_false', dest='sqlite'),
+	    )
 	def handle(self, *args, **options):
+		postgres = true_if_none(options.get('postgres'))
+		mysql = true_if_none(options.get('mysql'))
+		sqlite = true_if_none(options.get('sqlite'))
+
+		print postgres, mysql, sqlite
+
 		# Create DB objects
-		pg_test = Blah.objects.create(text=TEST_POSTGRES)
-		pg_test.save(using='postgres')
-		mysql_test = Blah.objects.create(text=TEST_MYSQL)
-		mysql_test.save(using='mysql')
-		sqlite_test = Blah.objects.create(text=TEST_SQLITE)
-		sqlite_test.save()
+		if postgres:
+			pg_test = Blah.objects.create(text=TEST_POSTGRES)
+			pg_test.save(using='postgres')
+		if mysql:
+			mysql_test = Blah.objects.create(text=TEST_MYSQL)
+			mysql_test.save(using='mysql')
+		if sqlite:
+			sqlite_test = Blah.objects.create(text=TEST_SQLITE)
+			sqlite_test.save()
+
+		# remove databases from the DB dict if we're not testing them
+		if not postgres: del settings.DATABASES['postgres']
+		if not mysql: del settings.DATABASES['mysql']
+		if not sqlite: del settings.DATABASES['default']
 
 		# perform backup
 		call_command('backup', output='backup.tgz')
 
 		# delete everything
-		pg_test.delete()
-		mysql_test.delete()
-		sqlite_test.delete()
+		if postgres: pg_test.delete()
+		if mysql: mysql_test.delete()
+		if sqlite: sqlite_test.delete()
 		os.unlink(os.path.join(settings.MEDIA_ROOT, 'test_image.jpg'))
 
 		# perform restore
@@ -46,20 +64,28 @@ class Command(BaseCommand):
 		assert hashfile(img_path) == IMAGE_SHA1
 
 		# check that the postgres db entry is there
-		qs = Blah.objects.using('postgres').all()
-		assert len(qs) == 1
-		assert qs[0].text == TEST_POSTGRES
+		if postgres:
+			qs = Blah.objects.using('postgres').all()
+			assert len(qs) == 1
+			assert qs[0].text == TEST_POSTGRES
 
 		# check that the mysql db entry is there
-		qs = Blah.objects.using('mysql').all()
-		assert len(qs) == 1
-		assert qs[0].text == TEST_MYSQL
+		if mysql:
+			qs = Blah.objects.using('mysql').all()
+			assert len(qs) == 1
+			assert qs[0].text == TEST_MYSQL
 
 		# check that the sqlite db entry is there
-		qs = Blah.objects.using('default').all()
-		assert len(qs) == 1
-		assert qs[0].text == TEST_SQLITE
+		if sqlite:
+			qs = Blah.objects.using('default').all()
+			assert len(qs) == 1
+			assert qs[0].text == TEST_SQLITE
 
+def true_if_none(a):
+	if a is None:
+		return True
+	else:
+		return a
 
 def hashfile(filepath):
 	sha1 = hashlib.sha1()
