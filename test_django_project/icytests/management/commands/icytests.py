@@ -24,6 +24,13 @@ class Command(BaseCommand):
 	        make_option('--without-sqlite', action='store_false', dest='sqlite'),
 	    )
 	def handle(self, *args, **options):
+		try:
+			self._handle(*args, **options)
+		except:
+			if os.path.exists('backup.tgz'):
+				os.unlink('backup.tgz')
+			raise
+	def _handle(self, *args, **options):
 		postgres = true_if_none(options.get('postgres'))
 		mysql = true_if_none(options.get('mysql'))
 		sqlite = true_if_none(options.get('sqlite'))
@@ -32,12 +39,18 @@ class Command(BaseCommand):
 
 		# Create DB objects
 		if postgres:
+			call_command('syncdb', input=False, database='postgres')
+			Blah.objects.using('postgres').all().delete()
 			pg_test = Blah.objects.create(text=TEST_POSTGRES)
 			pg_test.save(using='postgres')
 		if mysql:
+			call_command('syncdb', input=False, database='mysql')
+			Blah.objects.using('mysql').all().delete()
 			mysql_test = Blah.objects.create(text=TEST_MYSQL)
 			mysql_test.save(using='mysql')
 		if sqlite:
+			call_command('syncdb', input=False)
+			Blah.objects.using('default').all().delete()
 			sqlite_test = Blah.objects.create(text=TEST_SQLITE)
 			sqlite_test.save()
 
@@ -52,7 +65,7 @@ class Command(BaseCommand):
 		# delete everything
 		if postgres: pg_test.delete()
 		if mysql: mysql_test.delete()
-		if sqlite: sqlite_test.delete()
+		if sqlite: os.unlink(settings.DATABASES['default']['NAME'])
 		os.unlink(os.path.join(settings.MEDIA_ROOT, 'test_image.jpg'))
 
 		# perform restore
