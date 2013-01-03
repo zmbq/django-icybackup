@@ -8,10 +8,10 @@ from django.conf import settings
 BACKUP = 1
 RESTORE = 2
 
-MYSQL_BIN = settings.get('MYSQL_BIN', 'mysql')
-MYSQLDUMP_BIN = settings.get('MYSQLDUMP_BIN', 'mysqldump')
-PG_DUMP_BIN = settings.get('PG_DUMP_BIN', 'pg_dump')
-PG_RESTORE_BIN = settings.get('PG_RESTORE_BIN', 'pg_restore')
+MYSQL_BIN = getattr(settings, 'MYSQL_BIN', 'mysql')
+MYSQLDUMP_BIN = getattr(settings, 'MYSQLDUMP_BIN', 'mysqldump')
+PG_DUMP_BIN = getattr(settings, 'PG_DUMP_BIN', 'pg_dump')
+PG_RESTORE_BIN = getattr(settings, 'PG_RESTORE_BIN', 'pg_restore')
 
 def _database_dict_from_settings(settings):
     if hasattr(settings, 'DATABASES'):
