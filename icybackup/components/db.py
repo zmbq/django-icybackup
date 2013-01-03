@@ -79,11 +79,11 @@ def __postgresql(action, database, f):
         command = ['pg_restore', '-Oxc']
     
     if 'USER' in database and database['USER']:
-        command += ["--username=%s" % database['USER']]
+        command.append("--username={}".format(database['USER']))
     if 'HOST' in database and database['HOST']:
-        command += ["--host=%s" % database['HOST']]
+        command.append("--host={}".format(database['HOST']))
     if 'PORT' in database and database['PORT']:
-        command += ["--port=%s" % database['PORT']]
+        command.append("--port={}".format(database['PORT']))
     if 'NAME' in database and database['NAME']:
         if action == RESTORE:
             command.append('--dbname={}'.format(database['NAME']))
