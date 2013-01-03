@@ -3,9 +3,15 @@ from django.core.management.base import CommandError
 from tempfile import mkstemp
 from subprocess import check_call
 from shutil import copy
+from django.conf import settings
 
 BACKUP = 1
 RESTORE = 2
+
+MYSQL_BIN = settings.get('MYSQL_BIN', 'mysql')
+MYSQLDUMP_BIN = settings.get('MYSQLDUMP_BIN', 'mysqldump')
+PG_DUMP_BIN = settings.get('PG_DUMP_BIN', 'pg_dump')
+PG_RESTORE_BIN = settings.get('PG_RESTORE_BIN', 'pg_restore')
 
 def _database_dict_from_settings(settings):
     if hasattr(settings, 'DATABASES'):
@@ -51,9 +57,9 @@ def __sqlite(action, database, f):
 
 def __mysql(action, database, f):
     if action == BACKUP:
-        command = ['mysqldump']
+        command = [MYSQLDUMP_BIN]
     elif action == RESTORE:
-        command = ['mysql']
+        command = [MYSQL_BIN]
     
     if 'USER' in database:
         command += ["--user=%s" % database['USER']]
@@ -74,9 +80,9 @@ def __mysql(action, database, f):
 
 def __postgresql(action, database, f):
     if action == BACKUP:
-        command = ['pg_dump', '--format=c']
+        command = [PG_DUMP_BIN, '--format=c']
     elif action == RESTORE:
-        command = ['pg_restore', '-Oxc']
+        command = [PG_RESTORE_BIN, '-Oxc']
     
     if 'USER' in database and database['USER']:
         command.append("--username={}".format(database['USER']))
