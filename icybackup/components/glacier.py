@@ -1,7 +1,9 @@
 from .. import models
 from boto.glacier.layer2 import Layer2 as Glacier
+from django.core.management import CommandError
 
 # upload to amazon glacier
+
 def upload(glacier_vault, output_file, settings):
 	g = Glacier(aws_access_key_id=settings.AWS_ACCESS_KEY_ID, aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
 	for i in g.list_vaults():
