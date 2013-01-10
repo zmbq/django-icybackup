@@ -6,16 +6,16 @@ from django.core.management import CommandError
 
 # upload to amazon glacier
 
-def _get_vault(g, glacier_vault):
+def _get_vault_from_arn(arn, settings):
+	g = Glacier(aws_access_key_id=settings.AWS_ACCESS_KEY_ID, aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
 	for i in g.list_vaults():
-		if glacier_vault == i.arn:
+		if arn == i.arn:
 			return i
 	else:
 		raise CommandError('The specified vault could not be accessed.')
 
-def upload(glacier_vault, output_file, settings):
-	g = Glacier(aws_access_key_id=settings.AWS_ACCESS_KEY_ID, aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
-	vault = _get_vault(g, glacier_vault)
+def upload(arn, output_file, settings):
+	vault = _get_vault_from_arn(arn, settings)
 	id = vault.upload_archive(output_file)
 	
 	# record backup internally
@@ -24,9 +24,8 @@ def upload(glacier_vault, output_file, settings):
 	record = models.GlacierBackup.objects.create(glacier_id=id, date=datetime.now())
 	record.save()
 
-def reconcile(glacier_vault, settings):
-	g = Glacier(aws_access_key_id=settings.AWS_ACCESS_KEY_ID, aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
-	vault = _get_vault(g, glacier_vault)
+def reconcile(arn, settings):
+	vault = _get_vault_from_arn(arn, settings)
 
 	# check any inventory requests that have not been collected,
 	# and if they are finished, collect them
