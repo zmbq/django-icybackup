@@ -23,5 +23,6 @@ setup(name='django-icybackup',
     ],
     install_requires=[
         'boto',
+        'python-dateutil',
     ],
 )
