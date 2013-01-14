@@ -74,6 +74,7 @@ class Command(BaseCommand):
 		if glacier_vault is not None:
 			glacier.upload(glacier_vault, output_file, settings)
 			glacier.reconcile(glacier_vault, settings)
+			glacier.prune(glacier_vault, settings)
 
 		# output to stdout
 		if output_to_stdout:
