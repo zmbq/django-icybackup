@@ -16,6 +16,8 @@ class Command(BaseCommand):
 	option_list = BaseCommand.option_list + (
 		make_option('-i', '--file', default=None, dest='input',
 			help='Read backup from file'),
+		make_option('--pg-restore-flags', default=None, dest='postgres_flags',
+			help='Flags to pass to pg_restore'),
 		make_option('-I', '--stdin', action='store_true', dest='stdin',
 			help='Read backup from standard input'),
 		)
@@ -51,7 +53,7 @@ class Command(BaseCommand):
 			tf.extractall(extract_root)
 
 		# Restore databases
-		db.restore_from(settings, database_root)
+		db.restore_from(settings, database_root, **options)
 		
 		# Restore media directory
 		copy_tree(os.path.join(backup_root, 'media'), media_root)
