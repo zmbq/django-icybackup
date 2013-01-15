@@ -10,4 +10,6 @@ before_script:
   - python manage.py syncdb --noinput
   - python manage.py syncdb --noinput --database=postgres
   - python manage.py syncdb --noinput --database=mysql
-script: python manage.py icytests
+script:
+  - python manage.py icytests # runs a full backup/restore tests
+  - python manage.py test icybackup # unit tests of various things
