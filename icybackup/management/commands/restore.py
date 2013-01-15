@@ -53,7 +53,10 @@ class Command(BaseCommand):
 			tf.extractall(extract_root)
 
 		# Restore databases
-		db.restore_from(settings, database_root, **options)
+		db_options = {}
+		if options.get('postgres_flags') is not None:
+			db_options['postgres_flags'] = options['postgres_flags']
+		db.restore_from(settings, database_root, **db_options)
 		
 		# Restore media directory
 		copy_tree(os.path.join(backup_root, 'media'), media_root)
