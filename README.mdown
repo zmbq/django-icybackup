@@ -36,6 +36,10 @@ Supports the following optional flags:
 - `manage.py restore -i backup.tgz` - restore from `backup.tgz`
 - `manage.py restore --stdin` - restore from stdin
 
+Optional flags:
+
+- `--pg-restore-flags` - flags to pass to the `pg_restore` process (default is `Oxc`). If the database you're restoring into exists and is empty, use `--pg-restore-flags=Ox`.
+
 Tip: If you want to move servers, or copy your production database/media exactly to development or staging, it is possible to do something like this:
 
     ssh other-server 'cd path/to/app && manage.py backup --stdout' | manage.py restore --stdin
