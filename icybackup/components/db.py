@@ -42,7 +42,7 @@ def do(action, database, f, **kwargs):
 	engine = database['ENGINE']
 	if 'mysql' in engine:
 		__mysql(action, database, f)
-	elif 'postgresql' in engine:
+	elif 'postgresql' in engine or 'postgis' in engine:
 		if 'postgres_flags' not in kwargs:
 			__postgresql(action, database, f)
 		else:
