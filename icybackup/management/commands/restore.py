@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from distutils.dir_util import copy_tree
 
-from ...components import db, lib
+from ...components import db
 
 # Based on: http://code.google.com/p/django-backup/
 # Based on: http://www.djangosnippets.org/snippets/823/
@@ -62,6 +62,6 @@ class Command(BaseCommand):
 		copy_tree(os.path.join(backup_root, 'media'), media_root)
 		
 		# clean up
-		lib.rm_rf(extract_root)
+		shutil.rmtree(extract_root, ignore_errors=True)
 		if input_file_temporary:
 			os.unlink(input_file)
