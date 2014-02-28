@@ -1,11 +1,11 @@
-import os, sys, time
+import os, sys, time, shutil
 from optparse import make_option
 from tempfile import mkdtemp, NamedTemporaryFile
 import tarfile
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from ...components import db, glacier, lib
+from ...components import db, glacier
 
 # Based on: http://code.google.com/p/django-backup/
 # Based on: http://www.djangosnippets.org/snippets/823/
@@ -82,7 +82,7 @@ class Command(BaseCommand):
 				sys.stdout.write(f.read())
 
 		# clean up
-		lib.rm_rf(backup_root)
+		shutil.rmtree(backup_root, ignore_errors=True)
 		if output_file_temporary:
 			os.unlink(output_file)
 
